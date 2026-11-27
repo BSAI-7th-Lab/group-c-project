@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Margalla Wildfire Planner</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Margalla Wildfire Planner</h1>
+    <span class="subtitle">Swarm-optimised fire response · Margalla Hills National Park</span>
+  </header>
+
+  <main class="layout">
+    <section id="map" aria-label="Map of Margalla Hills National Park"></section>
+
+    <aside class="panel" aria-label="Scenario controls">
+      <h2>Scenario</h2>
+
+      <label for="wind-speed">Wind speed <output id="wind-speed-out">10</output> km/h</label>
+      <input id="wind-speed" type="range" min="0" max="50" value="10">
+
+      <label for="wind-dir">Wind blows toward <output id="wind-dir-out">90</output>°</label>
+      <input id="wind-dir" type="range" min="0" max="359" value="90">
+
+      <label for="units">Firefighting units (K)</label>
+      <select id="units">
+        <option>3</option><option selected>4</option><option>5</option>
+      </select>
+
+      <button id="run" type="button" disabled title="Needs the backend /optimize endpoint (GC-33)">
+        Plan response
+      </button>
+      <p class="hint" id="status">Click-to-ignite and the fire animation arrive in GC-36.</p>
+
+      <h2>Results</h2>
+      <div class="placeholder" id="charts">Burned-area and convergence charts (GC-37)</div>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/map.js"></script>
+</body>
+</html>
