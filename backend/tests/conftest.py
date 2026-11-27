@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from optimizer.response import GridContext, wind_vector  # noqa: E402
+from optimizer.response import GridContext, wind_direction_at, wind_vector  # noqa: E402
 
 NEIGHBOURS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
@@ -25,12 +25,12 @@ def toy_fire_model(scenario, suppress_from, seed):
     burnable = scenario["burnable"]
     rows, cols = burnable.shape
     rng = np.random.default_rng(seed)
-    wr, wc = wind_vector(scenario["wind_dir_deg"])
     burning = np.zeros_like(burnable)
     burned = np.zeros_like(burnable)
     r0, c0 = scenario["ignition"]
     burning[r0, c0] = True
     for t in range(scenario["steps"]):
+        wr, wc = wind_vector(wind_direction_at(scenario, t))   # supports a wind change (GC-35)
         new = np.zeros_like(burning)
         for dr, dc in NEIGHBOURS:
             align = (dr * wr + dc * wc) / np.hypot(dr, dc)

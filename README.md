@@ -138,6 +138,7 @@ group-c-project/
 │   │   ├── pso.py              #   Particle Swarm Optimization (from scratch)
 │   │   ├── gwo.py              #   Grey Wolf Optimizer (from scratch)
 │   │   ├── baselines.py        #   no response, random, greedy downwind arc
+│   │   ├── replan.py           #   re-planning after a wind change (warm-start PSO)
 │   │   └── runner.py           #   run(method, scenario, ...) for experiments
 │   └── tests/                  # pytest suite
 ├── frontend/
@@ -208,6 +209,37 @@ print(result["burned_cells"], result["cells"], result["runtime_s"])
 
 `method` can be `"pso"`, `"gwo"`, `"greedy"`, `"random"` or `"none"`. The result row holds burned cells, fitness, travel minutes, penalty, number of evaluations, run time, chosen cells and the convergence history.
 
+### Re-planning after a wind change
+
+If the wind turns during a fire, units that are already working stay where they are. Units still on the way are re-planned with PSO, starting from the first run's swarm instead of from scratch.
+
+```python
+from optimizer.replan import run_wind_change
+
+row = run_wind_change(scenario, ctx, fire_model,
+                      t_change=12,            # step at which the wind turns
+                      new_wind_dir_deg=180,   # new direction (blowing toward)
+                      n_units=4, seed=0)
+print(row["fixed_burned"], row["warm_burned"], row["cold_burned"])
+```
+
+The function does four things in order:
+
+1. Plans with the forecast wind.
+2. Scores that fixed plan once the wind has changed.
+3. Re-plans the units that have not arrived yet, with a warm start.
+4. Re-plans them again from a random swarm with the same budget, for comparison.
+
+**Warm start.** The new swarm is made of three parts:
+
+- **The current plan.** This means re-planning can never do worse than keeping the plan.
+- **About two thirds:** the best positions from the first run, slightly jittered.
+- **The rest:** random plans.
+
+**Arrival times.** A unit sent to a new target is treated as dispatched again from the station at `t_change`. This is a cautious assumption until ACO redirect times are available (GC-28).
+
+For the dashboard, `situation_at(plan, t)` and `replan(...)` handle a single re-plan step.
+
 ---
 
 ## Interfaces between modules
@@ -232,6 +264,7 @@ flowchart LR
 | `suppress_from` | `int` array, grid shape | First time step a cell is suppressed; `NO_SUPPRESSION` where no unit works |
 | `travel_time` | `float` array, grid shape | Minutes from the nearest fire station; `inf` = unreachable |
 | Wind direction | degrees | Direction the wind blows **toward**. Open-Meteo gives where it comes **from**, so add 180° |
+| `scenario["wind_change"]` | `{"step": int, "wind_dir_deg": float}`, optional | Wind turns at `step`. The fire model reads the wind each step through `wind_direction_at(scenario, t)` |
 
 ---
 
@@ -305,6 +338,7 @@ gantt
 | GC-16 | Response model: decode, repair, suppression | Mustafa | ✅ Done |
 | GC-25 | Fitness function and PSO optimizer | Mustafa | ✅ Done |
 | GC-26 | GWO, baselines and `run()` interface | Mustafa | ✅ Done |
+| GC-35 | Adaptive re-planning with warm-start PSO | Mustafa | ✅ Done |
 | GC-9 – GC-11 | Data, 100 m grid, travel time, risk layers | Khubaib | ⏳ Planned |
 | GC-12 – GC-14 | Repo/API skeleton, fire model | Zain | ⏳ Planned |
 | GC-17, GC-18 | Style guide, road graph | Abdullah | ⏳ Planned |

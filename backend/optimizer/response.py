@@ -158,3 +158,20 @@ def wind_vector(direction_deg: float) -> tuple[float, float]:
     """
     rad = math.radians(direction_deg)
     return -math.cos(rad), math.sin(rad)
+
+
+def wind_direction_at(scenario: dict, step: int) -> float:
+    """Wind direction (degrees, blowing TOWARD) in force at a simulation step.
+
+    A scenario may carry a wind change for the re-planning experiments (GC-35):
+
+        scenario["wind_change"] = {"step": 12, "wind_dir_deg": 180.0}
+
+    Before `step` the scenario's own wind_dir_deg applies, from `step` on the new
+    one. The fire model should call this once per step instead of reading
+    scenario["wind_dir_deg"] directly; without a wind change nothing differs.
+    """
+    change = scenario.get("wind_change")
+    if change is not None and step >= change["step"]:
+        return float(change["wind_dir_deg"])
+    return float(scenario["wind_dir_deg"])
